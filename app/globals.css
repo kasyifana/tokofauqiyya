@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+/* ── Custom keyframes (tidak bisa inline di Tailwind) ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@keyframes droplet {
+  0%, 100% { transform: translateY(-3px) scale(0.96); opacity: 0.75; }
+  50%       { transform: translateY(2px) scale(1.04); opacity: 1; }
+}
+
+/* ── Animation utilities (pakai di className) ── */
+@utility animate-fade-up {
+  animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility animate-fade-in {
+  animation: fadeIn 0.3s ease both;
+}
+
+@utility animate-slide-up {
+  animation: slideUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility animate-droplet {
+  animation: droplet 2s ease-in-out infinite;
+}
+
+@utility animate-shimmer {
+  background: linear-gradient(90deg, #f0f4f8 25%, #e2e8f0 50%, #f0f4f8 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* ── Base styles ── */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    @apply bg-white text-slate-900;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { @apply bg-slate-100; }
+  ::-webkit-scrollbar-thumb { @apply bg-blue-200 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-blue-400; }
+
+  /* Remove outline on all elements, replace with ring on focus */
+  * { box-sizing: border-box; }
+}
