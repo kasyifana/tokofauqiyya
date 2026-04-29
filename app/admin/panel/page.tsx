@@ -13,6 +13,8 @@ interface Product {
   image: string | null;
 }
 
+import toast from 'react-hot-toast';
+
 // Reusable inline input class
 const searchCls = "w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 bg-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors";
 
@@ -32,12 +34,18 @@ export default function AdminPanelPage() {
   const handleDelete = async (id: number, name: string) => {
     if (!confirm(`Hapus produk "${name}"?\n(Ini juga akan menghapus riwayat transaksi untuk produk ini)`)) return;
     
-    const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
-    if (!res.ok) {
-      alert('Gagal menghapus produk dari database.');
-      return;
+    const tid = toast.loading(`Menghapus ${name}...`);
+    try {
+      const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        toast.error('Gagal menghapus produk dari database.', { id: tid });
+        return;
+      }
+      setProducts((p) => p.filter((x) => x.id !== id));
+      toast.success(`Berhasil menghapus produk "${name}"!`, { id: tid });
+    } catch (error) {
+      toast.error('Terjadi kesalahan sistem.', { id: tid });
     }
-    setProducts((p) => p.filter((x) => x.id !== id));
   };
 
   const fmt = (n: string | number) => Number(n).toLocaleString('id-ID');
