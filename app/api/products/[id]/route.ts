@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { products } from '@/lib/schema';
+import { products, transactions } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 
@@ -37,7 +37,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
-// DELETE product
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session || (session.user as { role?: string }).role !== 'admin') {
@@ -45,7 +44,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
   const { id } = await params;
   try {
+    // Delete associated transactions first to prevent foreign key constraint errors
+    await db.delete(transactions).where(eq(transactions.productId, Number(id)));
+    
+    // Then delete the product
     await db.delete(products).where(eq(products.id, Number(id)));
+    
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: 'Gagal hapus produk' }, { status: 500 });

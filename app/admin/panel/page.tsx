@@ -30,8 +30,13 @@ export default function AdminPanelPage() {
   useEffect(() => { load(); }, [load]);
 
   const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Hapus produk "${name}"?`)) return;
-    await fetch(`/api/products/${id}`, { method: 'DELETE' });
+    if (!confirm(`Hapus produk "${name}"?\n(Ini juga akan menghapus riwayat transaksi untuk produk ini)`)) return;
+    
+    const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      alert('Gagal menghapus produk dari database.');
+      return;
+    }
     setProducts((p) => p.filter((x) => x.id !== id));
   };
 
