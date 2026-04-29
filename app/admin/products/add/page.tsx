@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AdminNavbar from '@/components/AdminNavbar';
 import { ImageIcon, ArrowLeft, Package, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 import imageCompression from 'browser-image-compression';
 
@@ -35,29 +36,46 @@ export default function AddProductPage() {
     if (!name || !price || !stock) { setError('Semua field wajib diisi'); return; }
     setError(''); setLoading(true);
     try {
-      let imageUrl: string | null = null;
-      if (imageFile) {
-        // Compress image before upload
-        const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1024, useWebWorker: true };
-        const compressedFile = await imageCompression(imageFile, options);
-        
-        const fd = new FormData();
-        fd.append('image', compressedFile, imageFile.name);
-        const up = await fetch('/api/upload', { method: 'POST', body: fd });
-        imageUrl = up.ok ? (await up.json()).url : imageFile.name;
+      if (!confirm('Apakah Anda yakin ingin menambahkan produk ini?')) {
+        setLoading(false);
+        return;
       }
-      const res = await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, price: Number(price), stock: Number(stock), image: imageUrl }),
-      });
-      if (res.ok) router.push('/admin/panel');
-      else { const d = await res.json(); setError(d.error || 'Gagal menyimpan'); }
-    } catch { setError('Terjadi kesalahan'); }
-    finally { setLoading(false); }
-  };
-
-  return (
+      
+      const tid = toast.loading('Menambahkan produk...');
+      try {
+        let imageUrl: string | null = null;
+        if (imageFile) {
+          // Compress image before upload
+          const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1024, useWebWorker: true };
+          const compressedFile = await imageCompression(imageFile, options);
+          
+          const fd = new FormData();
+          fd.append('image', compressedFile, imageFile.name);
+          const up = await fetch('/api/upload', { method: 'POST', body: fd });
+          imageUrl = up.ok ? (await up.json()).url : imageFile.name;
+        }
+        const res = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, price: Number(price), stock: Number(stock), image: imageUrl }),
+        });
+        if (res.ok) {
+          toast.success('Produk berhasil ditambahkan!', { id: tid });
+          router.push('/admin/panel');
+        } else {
+          const d = await res.json();
+          toast.error(d.error || 'Gagal menyimpan', { id: tid });
+          setError(d.error || 'Gagal menyimpan');
+        }
+      } catch {
+        toast.error('Terjadi kesalahan', { id: tid });
+        setError('Terjadi kesalahan');
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    return (
     <div className="min-h-screen bg-slate-50">
       <AdminNavbar />
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-10">

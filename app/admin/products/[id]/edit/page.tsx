@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import AdminNavbar from '@/components/AdminNavbar';
 import { ImageIcon, ArrowLeft, Pencil, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 import imageCompression from 'browser-image-compression';
 
@@ -46,31 +47,48 @@ export default function EditProductPage() {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      let imageUrl: string | undefined;
-      if (imageFile) {
-        // Compress image before upload
-        const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1024, useWebWorker: true };
-        const compressedFile = await imageCompression(imageFile, options);
-        
-        const fd = new FormData();
-        fd.append('image', compressedFile, imageFile.name);
-        const up = await fetch('/api/upload', { method: 'POST', body: fd });
-        imageUrl = up.ok ? (await up.json()).url : imageFile.name;
+      if (!confirm('Apakah Anda yakin ingin menyimpan perubahan produk ini?')) {
+        setLoading(false);
+        return;
       }
-      const body: Record<string, unknown> = { name, price: Number(price), stock: Number(stock) };
-      if (imageUrl) body.image = imageUrl;
-      const res = await fetch(`/api/products/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (res.ok) router.push('/admin/panel');
-      else { const d = await res.json(); setError(d.error || 'Gagal update'); }
-    } catch { setError('Terjadi kesalahan'); }
-    finally { setLoading(false); }
-  };
-
-  const currentSrc = currentImage
+      
+      const tid = toast.loading('Menyimpan perubahan...');
+      try {
+        let imageUrl: string | undefined;
+        if (imageFile) {
+          // Compress image before upload
+          const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1024, useWebWorker: true };
+          const compressedFile = await imageCompression(imageFile, options);
+          
+          const fd = new FormData();
+          fd.append('image', compressedFile, imageFile.name);
+          const up = await fetch('/api/upload', { method: 'POST', body: fd });
+          imageUrl = up.ok ? (await up.json()).url : imageFile.name;
+        }
+        const body: Record<string, unknown> = { name, price: Number(price), stock: Number(stock) };
+        if (imageUrl) body.image = imageUrl;
+        const res = await fetch(`/api/products/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (res.ok) {
+          toast.success('Produk berhasil diperbarui!', { id: tid });
+          router.push('/admin/panel');
+        } else {
+          const d = await res.json();
+          toast.error(d.error || 'Gagal update', { id: tid });
+          setError(d.error || 'Gagal update');
+        }
+      } catch {
+        toast.error('Terjadi kesalahan', { id: tid });
+        setError('Terjadi kesalahan');
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    const currentSrc = currentImage
     ? currentImage.startsWith('http') ? currentImage : `/assets/img/${currentImage}`
     : null;
 
