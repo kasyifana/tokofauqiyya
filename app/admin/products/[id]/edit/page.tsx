@@ -46,47 +46,63 @@ export default function EditProductPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(''); setLoading(true);
+      toast.custom((t) => (
+        <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-sm w-full bg-white shadow-2xl rounded-2xl p-6 border border-slate-100 pointer-events-auto flex flex-col gap-4`}>
+          <div className="flex gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
+              <Pencil size={18} className="text-amber-500" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 mt-0.5">Simpan Perubahan?</h3>
+              <p className="text-slate-500 text-sm mt-1 leading-relaxed">
+                Anda yakin ingin menyimpan perubahan pada produk <strong>{name}</strong>?
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3 mt-2">
+            <button onClick={() => { toast.dismiss(t.id); setLoading(false); }} className="flex-1 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-semibold transition-colors">Batal</button>
+            <button onClick={() => { toast.dismiss(t.id); executeSubmit(); }} className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold shadow-lg shadow-amber-500/25 transition-colors">Ya, Simpan</button>
+          </div>
+        </div>
+      ), { duration: Infinity, position: 'top-center' });
+  };
+
+  const executeSubmit = async () => {
+    const tid = toast.loading('Menyimpan perubahan...');
     try {
-      if (!confirm('Apakah Anda yakin ingin menyimpan perubahan produk ini?')) {
-        setLoading(false);
-        return;
+      let imageUrl: string | undefined;
+      if (imageFile) {
+        // Compress image before upload
+        const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1024, useWebWorker: true };
+        const compressedFile = await imageCompression(imageFile, options);
+        
+        const fd = new FormData();
+        fd.append('image', compressedFile, imageFile.name);
+        const up = await fetch('/api/upload', { method: 'POST', body: fd });
+        imageUrl = up.ok ? (await up.json()).url : imageFile.name;
       }
-      
-      const tid = toast.loading('Menyimpan perubahan...');
-      try {
-        let imageUrl: string | undefined;
-        if (imageFile) {
-          // Compress image before upload
-          const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1024, useWebWorker: true };
-          const compressedFile = await imageCompression(imageFile, options);
-          
-          const fd = new FormData();
-          fd.append('image', compressedFile, imageFile.name);
-          const up = await fetch('/api/upload', { method: 'POST', body: fd });
-          imageUrl = up.ok ? (await up.json()).url : imageFile.name;
-        }
-        const body: Record<string, unknown> = { name, price: Number(price), stock: Number(stock) };
-        if (imageUrl) body.image = imageUrl;
-        const res = await fetch(`/api/products/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-        if (res.ok) {
-          toast.success('Produk berhasil diperbarui!', { id: tid });
-          router.push('/admin/panel');
-        } else {
-          const d = await res.json();
-          toast.error(d.error || 'Gagal update', { id: tid });
-          setError(d.error || 'Gagal update');
-        }
-      } catch {
-        toast.error('Terjadi kesalahan', { id: tid });
-        setError('Terjadi kesalahan');
-      } finally {
+      const body: Record<string, unknown> = { name, price: Number(price), stock: Number(stock) };
+      if (imageUrl) body.image = imageUrl;
+      const res = await fetch(`/api/products/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        toast.success('Produk berhasil diperbarui!', { id: tid });
+        router.push('/admin/panel');
+      } else {
+        const d = await res.json();
+        toast.error(d.error || 'Gagal update', { id: tid });
+        setError(d.error || 'Gagal update');
         setLoading(false);
       }
-    };
+    } catch {
+      toast.error('Terjadi kesalahan', { id: tid });
+      setError('Terjadi kesalahan');
+      setLoading(false);
+    }
+  };
   
     const currentSrc = currentImage
     ? currentImage.startsWith('http') ? currentImage : `/assets/img/${currentImage}`

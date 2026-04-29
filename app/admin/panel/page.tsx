@@ -31,9 +31,29 @@ export default function AdminPanelPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Hapus produk "${name}"?\n(Ini juga akan menghapus riwayat transaksi untuk produk ini)`)) return;
-    
+  const handleDelete = (id: number, name: string) => {
+    toast.custom((t) => (
+      <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-sm w-full bg-white shadow-2xl rounded-2xl p-6 border border-slate-100 pointer-events-auto flex flex-col gap-4`}>
+        <div className="flex gap-3">
+          <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
+            <Trash2 size={18} className="text-red-500" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 mt-0.5">Hapus Produk?</h3>
+            <p className="text-slate-500 text-sm mt-1 leading-relaxed">
+              Anda yakin ingin menghapus <strong>{name}</strong>? Produk akan disembunyikan namun riwayat transaksinya tetap aman.
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-3 mt-2">
+          <button onClick={() => toast.dismiss(t.id)} className="flex-1 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-semibold transition-colors">Batal</button>
+          <button onClick={() => { toast.dismiss(t.id); executeDelete(id, name); }} className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold shadow-lg shadow-red-500/25 transition-colors">Ya, Hapus</button>
+        </div>
+      </div>
+    ), { duration: Infinity, position: 'top-center' });
+  };
+
+  const executeDelete = async (id: number, name: string) => {
     const tid = toast.loading(`Menghapus ${name}...`);
     try {
       const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });

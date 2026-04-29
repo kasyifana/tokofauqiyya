@@ -44,11 +44,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
   const { id } = await params;
   try {
-    // Delete associated transactions first to prevent foreign key constraint errors
-    await db.delete(transactions).where(eq(transactions.productId, Number(id)));
-    
-    // Then delete the product
-    await db.delete(products).where(eq(products.id, Number(id)));
+    // Soft delete product by setting isActive to false
+    await db.update(products).set({ isActive: false }).where(eq(products.id, Number(id)));
     
     return NextResponse.json({ success: true });
   } catch (error) {

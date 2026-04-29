@@ -7,7 +7,7 @@ import { auth } from '@/lib/auth';
 // GET all products (public)
 export async function GET() {
   try {
-    const result = await db.select().from(products).orderBy(products.id);
+    const result = await db.select().from(products).where(eq(products.isActive, true)).orderBy(products.id);
     return NextResponse.json(result);
   } catch (error) {
     console.error(error);

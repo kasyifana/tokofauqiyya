@@ -35,45 +35,62 @@ export default function AddProductPage() {
     e.preventDefault();
     if (!name || !price || !stock) { setError('Semua field wajib diisi'); return; }
     setError(''); setLoading(true);
+    
+    toast.custom((t) => (
+      <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-sm w-full bg-white shadow-2xl rounded-2xl p-6 border border-slate-100 pointer-events-auto flex flex-col gap-4`}>
+        <div className="flex gap-3">
+          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+            <Package size={18} className="text-blue-500" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 mt-0.5">Tambah Produk?</h3>
+            <p className="text-slate-500 text-sm mt-1 leading-relaxed">
+              Anda yakin ingin menyimpan <strong>{name}</strong> ke dalam katalog toko?
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-3 mt-2">
+          <button onClick={() => { toast.dismiss(t.id); setLoading(false); }} className="flex-1 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-semibold transition-colors">Batal</button>
+          <button onClick={() => { toast.dismiss(t.id); executeSubmit(); }} className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-lg shadow-blue-500/25 transition-colors">Ya, Simpan</button>
+        </div>
+      </div>
+    ), { duration: Infinity, position: 'top-center' });
+  };
+
+  const executeSubmit = async () => {
+    const tid = toast.loading('Menambahkan produk...');
     try {
-      if (!confirm('Apakah Anda yakin ingin menambahkan produk ini?')) {
-        setLoading(false);
-        return;
+      let imageUrl: string | null = null;
+      if (imageFile) {
+        // Compress image before upload
+        const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1024, useWebWorker: true };
+        const compressedFile = await imageCompression(imageFile, options);
+        
+        const fd = new FormData();
+        fd.append('image', compressedFile, imageFile.name);
+        const up = await fetch('/api/upload', { method: 'POST', body: fd });
+        imageUrl = up.ok ? (await up.json()).url : imageFile.name;
       }
-      
-      const tid = toast.loading('Menambahkan produk...');
-      try {
-        let imageUrl: string | null = null;
-        if (imageFile) {
-          // Compress image before upload
-          const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1024, useWebWorker: true };
-          const compressedFile = await imageCompression(imageFile, options);
-          
-          const fd = new FormData();
-          fd.append('image', compressedFile, imageFile.name);
-          const up = await fetch('/api/upload', { method: 'POST', body: fd });
-          imageUrl = up.ok ? (await up.json()).url : imageFile.name;
-        }
-        const res = await fetch('/api/products', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, price: Number(price), stock: Number(stock), image: imageUrl }),
-        });
-        if (res.ok) {
-          toast.success('Produk berhasil ditambahkan!', { id: tid });
-          router.push('/admin/panel');
-        } else {
-          const d = await res.json();
-          toast.error(d.error || 'Gagal menyimpan', { id: tid });
-          setError(d.error || 'Gagal menyimpan');
-        }
-      } catch {
-        toast.error('Terjadi kesalahan', { id: tid });
-        setError('Terjadi kesalahan');
-      } finally {
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, price: Number(price), stock: Number(stock), image: imageUrl }),
+      });
+      if (res.ok) {
+        toast.success('Produk berhasil ditambahkan!', { id: tid });
+        router.push('/admin/panel');
+      } else {
+        const d = await res.json();
+        toast.error(d.error || 'Gagal menyimpan', { id: tid });
+        setError(d.error || 'Gagal menyimpan');
         setLoading(false);
       }
-    };
+    } catch {
+      toast.error('Terjadi kesalahan', { id: tid });
+      setError('Terjadi kesalahan');
+      setLoading(false);
+    }
+  };
   
     return (
     <div className="min-h-screen bg-slate-50">

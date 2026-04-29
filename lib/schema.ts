@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, numeric, integer, text, timestamp, check } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, numeric, integer, text, timestamp, boolean, check } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 export const products = pgTable('products', {
@@ -7,6 +7,7 @@ export const products = pgTable('products', {
   price: numeric('price', { precision: 15, scale: 2 }).notNull(),
   stock: integer('stock').notNull().default(0),
   image: text('image'),
+  isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
