@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingCart, Minus, Plus, Trash2, X, MessageCircle, Droplets, ChevronRight, Package, MapPin } from 'lucide-react';
 
-const WA_NUMBER = '628889281226';
+const WA_NUMBER = process.env.NEXT_PUBLIC_WA_NUMBER;
 
 interface Product {
   id: number;
